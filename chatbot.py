@@ -239,3 +239,9 @@ while True:
         print("User: " + user_input)
         stream_graph_updates(user_input)
         break
+    
+    
+    
+    
+    
+    
