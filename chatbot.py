@@ -13,6 +13,12 @@ from langgraph.graph import START, MessagesState, StateGraph
 from langchain_core.messages import HumanMessage, AIMessage
 import sys
 from dotenv import load_dotenv, find_dotenv
+from readMails import getmessages
+from langchain_core.tools import tool
+from langgraph.prebuilt import ToolNode
+import json
+from langchain_core.messages import ToolMessage
+
 
 dotenv_path = find_dotenv()
 
@@ -39,209 +45,132 @@ print(f"✅ GROQ_API_KEY is loaded: {bool(GROQ_API_KEY)}")
 llm = ChatGroq(model="llama3-8b-8192")
 
 
-# Integrating Tavily search
-
-from tavily import TavilyClient
-
-
-TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
-# tavily_client = TavilyClient(api_key=TAVILY_API_KEY)
-
-# response = tavily_client.search("Who is Leo Messi?")
-
-# print(response)
-
-
-from langchain_community.tools.tavily_search import TavilySearchResults
-from langchain_community.utilities.tavily_search import TavilySearchAPIWrapper
-
-
-
-tavily_api_wrapper = TavilySearchAPIWrapper(tavily_api_key=TAVILY_API_KEY)
-
-tool = TavilySearchResults(max_results=2, api_wrapper = tavily_api_wrapper)
-tools = [tool]
-tool.invoke("What's a 'node' in LangGraph?")
-
-
-
-
-
-llm_with_tools = llm.bind_tools(tools)
-
-
-
-
-
-
 class State(TypedDict):
     # Messages have the type "list". The `add_messages` function
     # in the annotation defines how this state key should be updated
     # (in this case, it appends messages to the list, rather than overwriting them)
     messages: Annotated[list, add_messages]
+    mails: str
+    summary : str
 
 
 graph_builder = StateGraph(State)
 
-def chatbot(state: State):
-    return {"messages": [llm_with_tools.invoke(state["messages"])]}
+
+# -------- Node Definitions ---------
+
+def read_mails_node(state: State) -> dict:
+    '''
+    Node that fetches emails and adds them to the state
+    
+    '''
+    
+    mails_txt = getmessages()
+    # print("Read Mails Node - Retrieved mails text")
+    return {"mails": mails_txt}
 
 
-graph_builder.add_node("chatbot", chatbot)
+graph_builder.add_node("read_mails",read_mails_node)
 
 
+# def summarize_node(state:State) -> dict:
+#     """
+#     Node that takes the mails text from the state and asks the LLM to produce a smart summary.
+#     """
+    
+#     mails_txt = state.get("mails","")
+#     prompt = (
+#         f"Please provide a smart summary of the following emails, highlighting only the important "
+#         f"information. If you think the human needs to review the email, mention that as well:\n\n{mails_txt}"
+#     )
+#     response = llm.invoke([{"role": "user", "content": prompt}])
+#     # Assuming response is an AIMessage, extract its content.
+#     summary = response.content if hasattr(response, "content") else str(response)
+#     # print("Summarize Node - Generated summary")
+#     return {"summary": summary}
 
-# def chatbot(state : State):
-#     return {"messages": [llm.invoke(state["messages"])]}
+import re
 
-# graph_builder.add_node("chatbot", chatbot)
+def remove_links(text: str) -> str:
+    """
+    Remove URLs from the text.
+    """
+    return re.sub(r'http\S+', '', text)
+
+def iterative_summarize_emails(text: str, email_delimiter: str = "-"*40, max_email_chars: int = 2000) -> str:
+    """
+    Iteratively summarizes a large email text by:
+      1. Splitting the emails based on a delimiter.
+      2. Cleaning and truncating each email if needed.
+      3. Summarizing each email individually.
+      4. Combining the individual summaries into a final summary.
+      
+    :param text: The full text containing multiple emails.
+    :param email_delimiter: The string that delimits individual emails.
+    :param max_email_chars: Maximum number of characters to consider for each email.
+    :return: A final concise summary of all emails.
+    """
+    # Split the text into individual emails using the delimiter
+    emails = text.split(email_delimiter)
+    emails = [email.strip() for email in emails if email.strip()]
+    
+    email_summaries = []
+    for email in emails:
+        # Remove URLs and other unnecessary content
+        email = remove_links(email)
+        
+        # Truncate the email if it's too long (to avoid hitting the token limit)
+        if len(email) > max_email_chars:
+            email = email[:max_email_chars]
+        
+        # Create a prompt for summarizing an individual email
+        prompt = f"Please provide a concise summary for the following email content:\n\n{email}"
+        response = llm.invoke([{"role": "user", "content": prompt}])
+        summary = response.content if hasattr(response, "content") else str(response)
+        email_summaries.append(summary)
+    
+    # Combine all individual summaries into one text
+    combined_summary_text = "\n".join(email_summaries)
+    
+    # Optionally, do a final summarization on the combined summaries if needed
+    final_prompt = f"Combine the following email summaries into one coherent, concise final summary, list them out one by one and list how many total emails were there :\n\n{combined_summary_text}"
+    final_response = llm.invoke([{"role": "user", "content": final_prompt}])
+    final_summary = final_response.content if hasattr(final_response, "content") else str(final_response)
+    
+    return final_summary
+
+# Update your summarization node to use this iterative approach.
+def summarize_node(state: State) -> dict:
+    """
+    Node that takes the email text from the state and uses iterative summarization
+    to produce a smart summary.
+    """
+    mails_txt = state.get("mails", "")
+    if not mails_txt.strip():
+        return {"summary": "No email content to summarize."}
+    
+    summary = iterative_summarize_emails(mails_txt)
+    return {"summary": summary}
+
+graph_builder.add_node("summarize", summarize_node)
 
 
+# Flow: START -> read_mails -> summarize -> END
+graph_builder.add_edge(START, "read_mails")
+graph_builder.add_edge("read_mails", "summarize")
+graph_builder.add_edge("summarize", END)
 
-graph_builder.add_edge(START, "chatbot")
-
-graph_builder.add_edge("chatbot", END)
 
 graph = graph_builder.compile()
 
 
+def run_email_agent():
+    initial_state = {"mails": "", "summary": ""}
+    final_state = graph.invoke(initial_state)
+    print("Email Summary:")
+    print(final_state.get("summary", "No summary generated."))
 
-def stream_graph_updates(user_input: str):
-    for event in graph.stream({"messages": [{"role": "user", "content": user_input}]}):
-        for value in event.values():
-            print("Assistant:", value["messages"][-1].content)
-
-
-# while True:
-#     try:
-#         user_input = input("User: ")
-#         if user_input.lower() in ["quit", "exit", "q"]:
-#             print("Goodbye!")
-#             break
-
-#         stream_graph_updates(user_input)
-#     except:
-#         # fallback if input() is not available
-#         user_input = "What do you know about LangGraph?"
-#         print("User: " + user_input)
-#         stream_graph_updates(user_input)
-#         break
-    
-    
-    
-    
-
-# Tavily api
-
-
-
-# Below, we implement a BasicToolNode that checks the most recent message
-# in the state and calls tools if the message contains tool_calls. 
-
-# We will later replace this with LangGraph's prebuilt ToolNode to speed things up,
-# but building it ourselves first is instructive.
-
-import json
-
-from langchain_core.messages import ToolMessage
-
-
-class BasicToolNode:
-    """A node that runs the tools requested in the last AIMessage."""
-
-    def __init__(self, tools: list) -> None:
-        self.tools_by_name = {tool.name: tool for tool in tools}
-
-    def __call__(self, inputs: dict):
-        if messages := inputs.get("messages", []):
-            message = messages[-1]
-        else:
-            raise ValueError("No message found in input")
-        outputs = []
-        for tool_call in message.tool_calls:
-            tool_result = self.tools_by_name[tool_call["name"]].invoke(
-                tool_call["args"]
-            )
-            outputs.append(
-                ToolMessage(
-                    content=json.dumps(tool_result),
-                    name=tool_call["name"],
-                    tool_call_id=tool_call["id"],
-                )
-            )
-        return {"messages": outputs}
-
-
-tool_node = BasicToolNode(tools=[tool])
-graph_builder.add_node("tools", tool_node)
-
-'''
-
-With the tool node added, we can define the conditional_edges.
-
-Recall that edges route the control flow from one node to the next.
-Conditional edges usually contain "if" statements to route to different nodes depending
-on the current graph state.
-These functions receive the current graph state and return a string or list
-of strings indicating which node(s) to call next.
-
-'''
-
-
-
-def route_tools(
-    state: State,
-):
-    """
-    Use in the conditional_edge to route to the ToolNode if the last message
-    has tool calls. Otherwise, route to the end.
-    """
-    if isinstance(state, list):
-        ai_message = state[-1]
-    elif messages := state.get("messages", []):
-        ai_message = messages[-1]
-    else:
-        raise ValueError(f"No messages found in input state to tool_edge: {state}")
-    if hasattr(ai_message, "tool_calls") and len(ai_message.tool_calls) > 0:
-        return "tools"
-    return END
-
-
-# The `tools_condition` function returns "tools" if the chatbot asks to use a tool, and "END" if
-# it is fine directly responding. This conditional routing defines the main agent loop.
-graph_builder.add_conditional_edges(
-    "chatbot",
-    route_tools,
-    # The following dictionary lets you tell the graph to interpret the condition's outputs as a specific node
-    # It defaults to the identity function, but if you
-    # want to use a node named something else apart from "tools",
-    # You can update the value of the dictionary to something else
-    # e.g., "tools": "my_tools"
-    {"tools": "tools", END: END},
-)
-# Any time a tool is called, we return to the chatbot to decide the next step
-graph_builder.add_edge("tools", "chatbot")
-graph_builder.add_edge(START, "chatbot")
-graph = graph_builder.compile()
-
-
-while True:
-    try:
-        user_input = input("User: ")
-        if user_input.lower() in ["quit", "exit", "q"]:
-            print("Goodbye!")
-            break
-
-        stream_graph_updates(user_input)
-    except:
-        # fallback if input() is not available
-        user_input = "What do you know about LangGraph?"
-        print("User: " + user_input)
-        stream_graph_updates(user_input)
-        break
-    
-    
-    
-    
+if __name__ == "__main__":
+    run_email_agent()
     
     
