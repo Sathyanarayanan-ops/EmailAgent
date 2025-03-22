@@ -132,16 +132,36 @@ def iterative_summarize_emails(text: str, email_delimiter: str = "-"*40, max_ema
     # Combine all individual summaries into one text
     combined_summary_text = "\n".join(email_summaries)
     
-    # Optionally, do a final summarization on the combined summaries if needed
+    
     final_prompt = f"""
-                    You are a highly detail-oriented assistant. Using the individual email summaries below, produce a comprehensive and smart final summary that lists each email separately with as much detail as possible. For each email, please:
-                    - Assign a sequential number (e.g., 1,  2, etc.).
-                    - Clearly state the subject of the email. 
-                    After listing each email, add a final line that states the total number of emails processed.
+You are a smart email summarizer. Given the raw emails below grouped by account, produce an output with the following format exactly:
 
-                    Email summaries:
-                    {combined_summary_text}
-                    """
+For each Gmail account:
+1. Start with a header line that displays the account in the format:
+   Email id: <account_email>
+2. Then, list each email from that account in a list. Provide a concise but well detailed summary.
+3. After processing all accounts, output a final line that states the total number of emails processed in the format:
+   Total of X emails from both accounts
+
+For example, if the emails come from two accounts, the output should look like:
+
+Email id: example1@gmail.com
+ 1) Email1 summary
+ 2) Email2 summary
+ 3) Email3 summary
+
+Email id: example2@gmail.com
+ 1) Email1 summary
+ 2) Email2 summary
+ 3) Email3 summary
+
+Total of 6 emails from both accounts
+
+Now, process the following emails:
+{combined_summary_text}
+"""
+
+
     final_response = llm.invoke([{"role": "user", "content": final_prompt}])
     final_summary = final_response.content if hasattr(final_response, "content") else str(final_response)
     
