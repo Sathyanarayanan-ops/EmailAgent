@@ -133,7 +133,15 @@ def iterative_summarize_emails(text: str, email_delimiter: str = "-"*40, max_ema
     combined_summary_text = "\n".join(email_summaries)
     
     # Optionally, do a final summarization on the combined summaries if needed
-    final_prompt = f"Combine the following email summaries into one coherent, concise final summary, list them out one by one and list how many total emails were there :\n\n{combined_summary_text}"
+    final_prompt = f"""
+                    You are a highly detail-oriented assistant. Using the individual email summaries below, produce a comprehensive and smart final summary that lists each email separately with as much detail as possible. For each email, please:
+                    - Assign a sequential number (e.g., 1,  2, etc.).
+                    - Clearly state the subject of the email. 
+                    After listing each email, add a final line that states the total number of emails processed.
+
+                    Email summaries:
+                    {combined_summary_text}
+                    """
     final_response = llm.invoke([{"role": "user", "content": final_prompt}])
     final_summary = final_response.content if hasattr(final_response, "content") else str(final_response)
     
