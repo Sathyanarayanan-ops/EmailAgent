@@ -1,38 +1,63 @@
-import google.auth
-from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
+import os
+import base64
+from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
-import os 
-import base64
-
+from googleapiclient.discovery import build
 
 SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
 
-
-def getmessages():
+def get_credentials(user_email: str) -> Credentials:
+    """
+    Loads credentials for a given user from a token file specific to that user.
+    If the token file does not exist or the credentials are invalid, performs
+    the OAuth flow and saves the new token.
+    """
+    # Use a sanitized token filename in case the email has characters not suited for filenames.
+    token_file = f"token_{user_email.replace('@','_at_').replace('.','_')}.json"
     creds = None
-    if os.path.exists("token.json"):
-        os.remove("token.json")
-        # creds = Credentials.from_authorized_user_file("token.json", SCOPES)
+
+    if os.path.exists(token_file):
+        creds = Credentials.from_authorized_user_file(token_file, SCOPES)
+
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
             flow = InstalledAppFlow.from_client_secrets_file("credentials.json", SCOPES)
             creds = flow.run_local_server(port=0)
-        with open("token.json", "w") as token:
+        with open(token_file, "w") as token:
             token.write(creds.to_json())
 
-    emails_accumulated = ""
-    try:
+    return creds
+
+def getmessages() -> str:
+    """
+    Fetch emails from multiple Gmail accounts (test users) and aggregate the results.
+    Returns a concatenated string of email details.
+    """
+    test_accounts = ["sathyanarayanan847@gmail.com", "sathyanarayanan0705@gmail.com"]
+    all_emails_text = ""
+    
+    for user in test_accounts:
+        # print(f"Processing account: {user}")
+        creds = get_credentials(user)
         service = build("gmail", "v1", credentials=creds)
-        msgs = service.users().messages().list(userId="me", q="newer_than:1d category:primary").execute().get("messages", [])
-        if not msgs:
-            # Optionally, return a message indicating no emails were found.
-            return "No messages found in the last 24 hours.\n"
         
+        # Use query targeting primary inbox emails newer than 1 day.
+        query = "newer_than:1d category:primary -in:trash -in:spam"
+        msgs_response = service.users().messages().list(
+            userId="me",
+            q=query
+        ).execute()
+        
+        msgs = msgs_response.get("messages", [])
+        # print(f"Found {len(msgs)} messages for {user} using query: {query}")
+        
+        if not msgs:
+            all_emails_text += f"No messages found for {user} in the last 24 hours.\n{'-'*40}\n"
+            continue
+
         for msg in msgs:
             message = service.users().messages().get(userId="me", id=msg["id"]).execute()
             headers = message.get("payload", {}).get("headers", [])
@@ -44,23 +69,30 @@ def getmessages():
             payload = message.get("payload", {})
             if "body" in payload and "data" in payload["body"]:
                 body_data = payload["body"]["data"]
-                body = base64.urlsafe_b64decode(body_data.encode("ASCII")).decode("utf-8")
+                try:
+                    body = base64.urlsafe_b64decode(body_data.encode("ASCII")).decode("utf-8")
+                except Exception as e:
+                    body = f"Error decoding body: {str(e)}"
             elif "parts" in payload:
                 for part in payload["parts"]:
                     if part.get("mimeType") == "text/plain" and "data" in part.get("body", {}):
                         body_data = part["body"]["data"]
-                        body = base64.urlsafe_b64decode(body_data.encode("ASCII")).decode("utf-8")
+                        try:
+                            body = base64.urlsafe_b64decode(body_data.encode("ASCII")).decode("utf-8")
+                        except Exception as e:
+                            body = f"Error decoding body: {str(e)}"
                         break
 
-            # Append email details to the accumulator string.
-            emails_accumulated += f"Subject: {subject}\nDate: {date}\nBody: {body}\n{'-'*40}\n"
-        
-        return emails_accumulated
-    
-    except HttpError as error:
-        print(f"An error occurred: {error}")
-        return ""
-    
-    
+            email_str = (f"User: {user}\nSubject: {subject}\nDate: {date}\n"
+                         f"Body: {body}\n{'-'*40}\n")
+            all_emails_text += email_str
+
+    return all_emails_text
+
+
+# mails_txt = getmessages()
+# print(mails_txt)
+
+
 if __name__ == "__main__":
     getmessages()
