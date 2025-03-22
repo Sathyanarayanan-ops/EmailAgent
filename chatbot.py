@@ -134,39 +134,33 @@ def iterative_summarize_emails(text: str, email_delimiter: str = "-"*40, max_ema
     
     
     final_prompt = f"""
-You are a smart email summarizer. The raw email data below is already grouped by Gmail account in the exact order they were received. Please produce an output that preserves this grouping and order exactly as follows:
+You are a smart email summarizer. Given the raw emails below grouped by account, produce an output with the following format exactly:
 
-For each Gmail account group:
-- Start with a header line that displays the account, in the format: "Email id: <account_email>"
-- Then, list each email from that account on a separate line, numbered sequentially (starting at 1) with a concise but detailed summary of that email.
-- Preserve the order of emails as they appear in the input for each account.
+For each Gmail account:
+1. Start with a header line that displays the account in the format:
+   Email id: <account_email>
+2. Then, list each email from that account in a list. Provide a concise but well detailed summary.
+3. After processing all accounts, output a final line that states the total number of emails processed in the format:
+   Total of X emails from both accounts
 
-After processing all accounts, output a final line stating the total number of emails processed, in the format:
-"Total of X emails from both accounts"
-
-Do not change or reorder the groups or the emails within each group.
-
-For example, if the input is:
-
-[Raw data for account: example1@gmail.com with 3 emails]
-[Raw data for account: example2@gmail.com with 3 emails]
-
-Your output should be exactly:
+For example, if the emails come from two accounts, the output should look like:
 
 Email id: example1@gmail.com
- 1) [Summary of first email]
- 2) [Summary of second email]
- 3) [Summary of third email]
+ 1) Email1 summary
+ 2) Email2 summary
+ 3) Email3 summary
 
 Email id: example2@gmail.com
- 1) [Summary of first email]
- 2) [Summary of second email]
- 3) [Summary of third email]
+ 1) Email1 summary
+ 2) Email2 summary
+ 3) Email3 summary
 
 Total of 6 emails from both accounts
 
-Now, process the following raw emails data:
+Adhere to these instructions very strictly.
+Now, process the following emails:
 {combined_summary_text}
+
 """
 
 
