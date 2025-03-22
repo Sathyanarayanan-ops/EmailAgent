@@ -36,7 +36,7 @@ def getmessages() -> str:
     Fetch emails from multiple Gmail accounts (test users) and aggregate the results.
     Returns a concatenated string of email details.
     """
-    test_accounts = ["sathyanarayanan847@gmail.com", "sathyanarayanan0705@gmail.com"]
+    test_accounts = ["sathyanarayanan0705@gmail.com","sathyanarayanan847@gmail.com"]
     all_emails_text = ""
     
     for user in test_accounts:
