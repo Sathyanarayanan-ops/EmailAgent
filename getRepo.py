@@ -24,7 +24,7 @@ GH_API_KEY = os.getenv("GITHUB_API_KEY")
 
 
 
-def get_repo_list():
+def get_repo_list()-> list:
         
     headers = {
         'Accept': 'application/vnd.github+json',
@@ -38,13 +38,36 @@ def get_repo_list():
     # Check if request is successful
     if response.status_code == 200:
         repo_list_json = response.json()
-        return repo_list_json
+        
+        repo_names = [repo['name'] for repo in repo_list_json]
+        return repo_names
         # print(repo_list_json)
     else:
         print(f"Request failed with status code: {response.status_code}")
         
         
-    # print(type(repo_list_json))
-    # outputs repo list in a list format rather than json format 
+    
 
-    # Will need to extract different repo list from this 
+def get_repo_details(owner,repo):
+    headers = {
+        'Accept': 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+        'Authorization': f'Bearer {GH_API_KEY}'  # Authorization with Bearer token
+    }
+    
+        # Send the request to the GitHub API to get repository info
+    url = f"https://api.github.com/repos/{owner}/{repo}"
+    response = requests.get(url, headers=headers)
+
+    if response.status_code == 200:
+        return response.json()
+    else:
+        print(f"Request failed with status code: {response.status_code}")
+        return None
+    
+owner = "sathyanarayanan-ops"
+repo = "EmailAgent"
+repo_data  = get_repo_details(owner,repo)
+
+if repo_data:
+    print(repo_data)
