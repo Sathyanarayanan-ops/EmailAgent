@@ -314,6 +314,14 @@ graph_builder.add_edge(START, "read_mails")
 graph_builder.add_edge("read_mails", "summarize")
 graph_builder.add_edge("summarize", END)
 
+# Will need to configure this part 
+# Add next agent , which is the github agent 
+# and then do a multi agent after that 
+# Now focus on Github agent 
+
+
+
+
 
 graph = graph_builder.compile()
 
