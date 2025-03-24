@@ -11,7 +11,7 @@ THen get the user's repo
 import requests
 import os 
 import dotenv
-
+from dotenv import load_dotenv, find_dotenv
 
 
 
@@ -21,7 +21,7 @@ if not dotenv_path:
 # Load the .env file explicitly
 load_dotenv(dotenv_path)
 #  Read the API Key
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GH_API_KEY = os.getenv("GITHUB_API_KEY")
 
 
 
