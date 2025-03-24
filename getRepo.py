@@ -9,6 +9,22 @@ THen get the user's repo
 
 
 import requests
+import os 
+import dotenv
+
+
+
+
+dotenv_path = find_dotenv()
+if not dotenv_path:
+    print("⚠️ .env file not found! Ensure it's in the same directory as main.py.")
+# Load the .env file explicitly
+load_dotenv(dotenv_path)
+#  Read the API Key
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+
+
+
 
 headers = {
     'Accept': 'application/vnd.github+json',
