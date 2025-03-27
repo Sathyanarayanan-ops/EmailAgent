@@ -179,3 +179,5 @@ print(commit_detail)
 
 
 #  You can track the exact changes made to the getRepo.py file through the raw_url and patch data in the files section, which would provide detailed diffs (added and removed lines of code).
+# The thing with getting the last commit from the project is that , it could be some minor issue commit such as adding/removing comments
+# Thus have the option to get information from last 'n' commits 
