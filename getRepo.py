@@ -16,6 +16,7 @@ class GitHubAPI:
     A class for interacting with the GitHub API to retrieve repository, commit, 
     branch, issue, and event details from a user's GitHub account.
     """
+    # OWNER = "sathyanarayanan-ops"
 
     def __init__(self):
         """
@@ -38,10 +39,12 @@ class GitHubAPI:
             'X-GitHub-Api-Version': '2022-11-28',
             'Authorization': f'Bearer {self.GH_API_KEY}'
         }
+        self.owner = "sathyanarayanan-ops"
         
         # Setup logging
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(__name__)
+
 
     def _send_request(self, url: str) -> Dict:
         """
@@ -71,7 +74,7 @@ class GitHubAPI:
         repo_list_json = self._send_request(url)
         return [repo['name'] for repo in repo_list_json]
 
-    def get_repo_details(self, owner: str, repo: str) -> Optional[Dict]:
+    def get_repo_details(self, repo: str) -> Optional[Dict]:
         """
         Retrieves detailed information about a specific repository.
         
@@ -82,10 +85,10 @@ class GitHubAPI:
         Returns:
             dict: A dictionary containing repository details or None if not found.
         """
-        url = f"https://api.github.com/repos/{owner}/{repo}"
+        url = f"https://api.github.com/repos/{self.owner}/{repo}"
         return self._send_request(url)
 
-    def get_commits(self, owner: str, repo: str) -> Optional[List[Dict]]:
+    def get_commits(self, repo: str) -> Optional[List[Dict]]:
         """
         Retrieves a list of commits for a specific repository.
         
@@ -96,10 +99,10 @@ class GitHubAPI:
         Returns:
             List[Dict]: A list of commit objects or None if no commits are found.
         """
-        url = f"https://api.github.com/repos/{owner}/{repo}/commits"
+        url = f"https://api.github.com/repos/{self.owner}/{repo}/commits"
         return self._send_request(url)
 
-    def get_commit_details(self, owner: str, repo: str, commit_sha: str) -> Optional[Dict]:
+    def get_commit_details(self, repo: str, commit_sha: str) -> Optional[Dict]:
         """
         Retrieves detailed information about a specific commit.
         
@@ -111,10 +114,10 @@ class GitHubAPI:
         Returns:
             dict: Detailed information about the commit.
         """
-        url = f"https://api.github.com/repos/{owner}/{repo}/commits/{commit_sha}"
+        url = f"https://api.github.com/repos/{self.owner}/{repo}/commits/{commit_sha}"
         return self._send_request(url)
 
-    def get_branches(self, owner: str, repo: str) -> Optional[List[Dict]]:
+    def get_branches(self, repo: str) -> Optional[List[Dict]]:
         """
         Retrieves a list of branches for a specific repository.
         
@@ -125,10 +128,10 @@ class GitHubAPI:
         Returns:
             List[Dict]: A list of branch objects.
         """
-        url = f"https://api.github.com/repos/{owner}/{repo}/branches"
+        url = f"https://api.github.com/repos/{self.owner}/{repo}/branches"
         return self._send_request(url)
 
-    def get_repo_events(self, owner: str, repo: str) -> Optional[List[Dict]]:
+    def get_repo_events(self,  repo: str) -> Optional[List[Dict]]:
         """
         Retrieves the events associated with a specific repository.
         
@@ -139,10 +142,10 @@ class GitHubAPI:
         Returns:
             List[Dict]: A list of event objects related to the repository.
         """
-        url = f"https://api.github.com/repos/{owner}/{repo}/events"
+        url = f"https://api.github.com/repos/{self.owner}/{repo}/events"
         return self._send_request(url)
 
-    def get_issues(self, owner: str, repo: str) -> Optional[List[Dict]]:
+    def get_issues(self, repo: str) -> Optional[List[Dict]]:
         """
         Retrieves a list of issues for a specific repository.
         
@@ -153,11 +156,34 @@ class GitHubAPI:
         Returns:
             List[Dict]: A list of issue objects.
         """
-        url = f"https://api.github.com/repos/{owner}/{repo}/issues"
+        url = f"https://api.github.com/repos/{self.owner}/{repo}/issues"
         return self._send_request(url)
+    
+    def compare_commits(self,repo, base_commit_sha, head_commit_sha):
+        """
+        Compare two commits in a GitHub repository to see the differences between them.
+        
+        Args:
+            owner (str): The GitHub username or organization.
+            repo (str): The repository name.
+            base_commit_sha (str): The SHA of the base commit (older commit).
+            head_commit_sha (str): The SHA of the head commit (newer commit).
+
+        Returns:
+            dict: A dictionary containing the comparison details, including file changes.
+        """
+        url = f"https://api.github.com/repos/{self.owner}/{repo}/compare/{base_commit_sha}...{head_commit_sha}"
+        response = requests.get(url, headers=self.headers)
+        
+        if response.status_code == 200:
+            return response.json()
+        else:
+            print(f"Request failed with status code: {response.status_code}")
+            return None
 
 
-owner = "sathyanarayanan-ops"
+
+
 # Example usage of the GitHubAPI class
 github = GitHubAPI()
 
@@ -174,7 +200,7 @@ github = GitHubAPI()
 # print(commits)
 # print("*************************\n")
 
-commit_detail = github.get_commit_details(owner,"EmailAgent","ce036e249de72a38bbfaaa4ba907ed146c3d8f87")
+commit_detail = github.get_commit_details("EmailAgent","ce036e249de72a38bbfaaa4ba907ed146c3d8f87")
 print(commit_detail)
 
 
