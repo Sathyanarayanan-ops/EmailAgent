@@ -100,7 +100,30 @@ class GitHubAPI:
             List[Dict]: A list of commit objects or None if no commits are found.
         """
         url = f"https://api.github.com/repos/{self.owner}/{repo}/commits"
-        return self._send_request(url)
+        
+        response = requests.get(url,headers=self.headers)
+
+        if response.status_code == 200 :
+            commit_data = response.json()
+            commit_info = []
+            
+            for commit in commit_data :
+                commit_sha = commit.get('sha','N/A')
+                commit_author_name = commit.get('commit',{}).get('author',{}).get('name','N/A')
+                
+                commit_info.append({
+                    'sha':commit_sha,
+                    'author_name': commit_author_name
+                })
+                
+            return commit_info
+            
+        else:
+            print(f"Request failed with status code: {response.status_code}")
+            return []
+        
+    
+    #Get commits is good , but contains a lot of information , we only need the name and sha of commits from the repo 
 
     def get_commit_details(self, repo: str, commit_sha: str) -> Optional[Dict]:
         """
@@ -229,18 +252,18 @@ github = GitHubAPI()
 # print(repo_data)
 # print("*************************\n")
 # # Get commits for a specific repository
-# commits = github.get_commits("EmailAgent")
-# print(commits)
+commits = github.get_commits("EmailAgent")
+print(commits)
 # print("*************************\n")
 
 # commit_detail = github.get_commit_details("EmailAgent","ce036e249de72a38bbfaaa4ba907ed146c3d8f87")
 # print(commit_detail)
 
 
-compare_response = github.compare_commits("EmailAgent","2e745293e90dc0c4053de48134b9be73e07da43d","78b59c919cd4f7367c61c2b01baebd4009acc2e2")
+# compare_response = github.compare_commits("EmailAgent","2e745293e90dc0c4053de48134b9be73e07da43d","78b59c919cd4f7367c61c2b01baebd4009acc2e2")
 
-code_changes = github.extract_code_changes(compare_response)
-print(code_changes)
+# code_changes = github.extract_code_changes(compare_response)
+# print(code_changes)
 # print(compare_commits)
 
 
