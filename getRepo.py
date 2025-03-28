@@ -109,11 +109,11 @@ class GitHubAPI:
             
             for commit in commit_data :
                 commit_sha = commit.get('sha','N/A')
-                commit_author_name = commit.get('commit',{}).get('author',{}).get('name','N/A')
+                commit_message = commit.get('commit',{}).get('message',{})
                 
                 commit_info.append({
                     'sha':commit_sha,
-                    'author_name': commit_author_name
+                    'commit_message': commit_message
                 })
                 
             return commit_info
