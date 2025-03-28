@@ -115,6 +115,9 @@ class GitHubAPI:
             dict: Detailed information about the commit.
         """
         url = f"https://api.github.com/repos/{self.owner}/{repo}/commits/{commit_sha}"
+        
+        details = self._send_request(url)
+        
         return self._send_request(url)
 
     def get_branches(self, repo: str) -> Optional[List[Dict]]:
@@ -180,6 +183,35 @@ class GitHubAPI:
         else:
             print(f"Request failed with status code: {response.status_code}")
             return None
+        
+    def extract_code_changes(self,compare_response):
+        """
+        Extracts only the code changes (diffs) from the GitHub commit comparison response.
+
+        Args:
+            compare_response (dict): The response from the GitHub compare commits API.
+
+        Returns:
+            list: A list of code changes (diffs) in a human-readable format.
+        """
+        code_changes = []
+        
+        if not compare_response:
+            return []
+
+        # Loop through the 'files' section to extract diffs from the patch field
+        for file in compare_response.get('files', []):
+            filename = file.get('filename', 'N/A')
+            patch = file.get('patch', None)
+
+            if patch:
+                code_changes.append({
+                    'filename': filename,
+                    'patch': patch
+                })
+        
+        return code_changes
+        
 
 # Check compare commit functions 
 
@@ -197,14 +229,27 @@ github = GitHubAPI()
 # print(repo_data)
 # print("*************************\n")
 # # Get commits for a specific repository
-# commits = github.get_commits(owner, "EmailAgent")
+# commits = github.get_commits("EmailAgent")
 # print(commits)
 # print("*************************\n")
 
-commit_detail = github.get_commit_details("EmailAgent","ce036e249de72a38bbfaaa4ba907ed146c3d8f87")
-print(commit_detail)
+# commit_detail = github.get_commit_details("EmailAgent","ce036e249de72a38bbfaaa4ba907ed146c3d8f87")
+# print(commit_detail)
+
+
+compare_response = github.compare_commits("EmailAgent","2e745293e90dc0c4053de48134b9be73e07da43d","78b59c919cd4f7367c61c2b01baebd4009acc2e2")
+
+code_changes = github.extract_code_changes(compare_response)
+print(code_changes)
+# print(compare_commits)
+
+
 
 
 #  You can track the exact changes made to the getRepo.py file through the raw_url and patch data in the files section, which would provide detailed diffs (added and removed lines of code).
 # The thing with getting the last commit from the project is that , it could be some minor issue commit such as adding/removing comments
 # Thus have the option to get information from last 'n' commits 
+
+
+
+
