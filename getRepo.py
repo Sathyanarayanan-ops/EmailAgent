@@ -235,13 +235,17 @@ class GitHubAPI:
         
         return code_changes
         
+        
+if __name__ == "__main__":
+    pass
+    
 
 # Check compare commit functions 
 
 
 
 # Example usage of the GitHubAPI class
-github = GitHubAPI()
+# github = GitHubAPI()
 
 # Get the repo list
 # repo_names = github.get_repo_list()
@@ -252,8 +256,8 @@ github = GitHubAPI()
 # print(repo_data)
 # print("*************************\n")
 # # Get commits for a specific repository
-commits = github.get_commits("EmailAgent")
-print(commits)
+# commits = github.get_commits("EmailAgent")
+# print(commits)
 # print("*************************\n")
 
 # commit_detail = github.get_commit_details("EmailAgent","ce036e249de72a38bbfaaa4ba907ed146c3d8f87")
