@@ -37,8 +37,9 @@ llm = ChatGroq(model="llama3-8b-8192")
 
 
 class State(TypedDict):
-    code_difference: str
-    summary: str
+    param1: str
+    param2: str
+    
 
 
 graph_builder = StateGraph(State)
