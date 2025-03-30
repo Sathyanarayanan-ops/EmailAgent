@@ -55,54 +55,17 @@ Undergrad Research Assistant – SASTRA University (Jan 2022 – May 2022)
 
 # get_page_info("https://lifeattiktok.com/search/7480779960623008018?spread=5MWH5CQ")
 
-API_BASE_URL = 'https://api.skyvern.com/v1/tasks'
-API_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjQ4ODgyNDUyNTIsInN1YiI6Im9fMzc2MjQ3OTQzOTkwMDk3NTMwIn0.THuYL7fWnXnMFc9IzRZ2LBmp_0bvTN0nUpQgGMo4EfY'
 
-headers = {
-    'x-api-key': f'{API_TOKEN}',
-    'Content-Type': 'application/json'
-}
+driver = webdriver.Chrome()
 
-task_payload = {
-    "url":"https://careers.roblox.com/jobs/6637846/apply",
-    "navigation_goal" : "Apply for a job",
-    "data_extraction_goal" :"Was the job application successful?",
-    "proxy_location" : "RESIDENTIAL",
-    "navigation_payload" : personal_info
-}
+# driver.get("https://job-boards.greenhouse.io/truveta/jobs/5421388004")
+request = driver.get("https://careers.roblox.com/jobs/6637846/apply")
 
-def create_task():
-    response = requests.post(API_BASE_URL, json=task_payload, headers=headers)
-    if response.status_code == 201:
-        task_info = response.json()
-        task_id = task_info.get('id')
-        print(f"Task created with ID: {task_id}")
-        return task_id
-    else:
-        print("Error creating task:", response.text)
-        return None
 
-def poll_task(task_id):
-    task_url = f"{API_BASE_URL}/{task_id}"
-    while True:
-        status_response = requests.get(task_url, headers=headers)
-        if status_response.status_code == 200:
-            status_info = status_response.json()
-            status = status_info.get('status')
-            print("Task status:", status)
-            if status == 'completed':
-                print("Task completed successfully!")
-                break
-            elif status == 'failed':
-                print("Task failed.")
-                break
-            else:
-                time.sleep(2)
-        else:
-            print("Error checking task status:", status_response.text)
-            break
+form_elements = driver.find_elements(By.TAG_NAME,'input')
+print(form_elements)
 
-if __name__ == "__main__":
-    task_id = create_task()
-    if task_id:
-        poll_task(task_id)
+
+# print(driver.find_element(By.XPATH,"/html/body").text) #####################
+
+driver.close()
