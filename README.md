@@ -1,14 +1,11 @@
 # EmailAgent
 
+Email Agent Done 
 
-First set up lang graph , 
+Github Agent Done 
 
-Learned concepts - State 
+Run Tests for Both agents and UI set up 
 
-Next is Tavily search engine to give llm the ability to handle websearch 
+Set up master Agent and Give handoff ability 
 
-Below, we implement a BasicToolNode that checks the most recent message
-in the state and calls tools if the message contains tool_calls. 
-
-We will later replace this with LangGraph's prebuilt ToolNode to speed things up,
-but building it ourselves first is instructive.
+Dockerize set up
