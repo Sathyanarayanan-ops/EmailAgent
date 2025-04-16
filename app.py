@@ -1,39 +1,33 @@
 import streamlit as st
 from orchestrator.master_graph import build_master_graph
 
-# Initialize the orchestrator once
+# Build LangGraph master agent once
 orchestrator = build_master_graph()
 
-st.set_page_config(page_title="Enterprise Master Agent", page_icon="🤖")
-
-st.title("🧠 Enterprise Master Agent (LangGraph)")
+st.set_page_config(page_title="Enterprise Agent", page_icon="🤖")
+st.title("🤖 Enterprise Master Agent")
 
 # Sidebar
 with st.sidebar:
-    st.markdown("### Instructions")
+    st.markdown("### What can I ask?")
     st.markdown("""
-    - Ask questions like:
-      - `"What changed in the repo?"`
-      - `"Check my emails"`
-      - `"Who applied for leave?"`
-    - The agent will route your request and return the result.
+    - `"Show me the latest code commits"`
+    - `"Summarize my email inbox"`
+    - `"What are the employee leave requests?"`
     """)
 
-# User input
-user_input = st.text_input("Ask your enterprise assistant:")
+# Chat input
+user_input = st.text_input("Ask the master agent something:")
 
-if st.button("Send") and user_input:
-    state = {
-        "user_input": user_input,
-        "chat_history": []  # Can persist this later
-    }
-
-    with st.spinner("Thinking..."):
+if st.button("Run") and user_input:
+    with st.spinner("Running agent..."):
+        state = {
+            "user_input": user_input,
+            "chat_history": []  # Can store session history here
+        }
         result = orchestrator.invoke(state)
-        response = result.get("agent_outputs", {}).get(state.get("active_agent", "default"))
+        outputs = result.get("agent_outputs", {})
+        response_text = next(iter(outputs.values()), "No response.")
 
-    if response:
-        st.markdown("### 🤖 Agent Response")
-        st.success(response)
-    else:
-        st.warning("No response from agent.")
+    st.markdown("### ✅ Agent Response")
+    st.success(response_text)

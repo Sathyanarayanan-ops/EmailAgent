@@ -1,7 +1,7 @@
 from langgraph.graph import StateGraph, END, START
 from orchestrator.types import OrchestratorState
 from orchestrator.router import route_to_agent
-from orchestrator.agents.github_agent import github_agent
+from orchestrator.agents.github_agent import run_git_agent as github_agent
 from orchestrator.agents.email_agent import run_email_agent as email_agent
 
 
