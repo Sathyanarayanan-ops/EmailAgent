@@ -20,6 +20,8 @@ def get_credentials(user_email: str) -> Credentials:
     """
     # Use a sanitized token filename in case the email has characters not suited for filenames.
     token_file = f"token_{user_email.replace('@','_at_').replace('.','_')}.json"
+    token_path = os.path.join(CURRENT_DIR, token_file)
+    credentials_path = os.path.join(CURRENT_DIR, "credentials.json")
     creds = None
 
     if os.path.exists(token_file):

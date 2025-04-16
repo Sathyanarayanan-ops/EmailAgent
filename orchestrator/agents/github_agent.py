@@ -49,28 +49,64 @@ graph_builder = StateGraph(State)
 
 #-------Node definitions 
 
-def get_repo_updates(state: State, repo_name = "EmailAgent", num_commits=2) :
-    '''
-    Node that gets updates on the current repo
-    '''
+# def get_repo_updates(state: State, repo_name = "EmailAgent", num_commits=2) :
+#     '''
+#     Node that gets updates on the current repo
+#     '''
     
+#     github_api = GitHubAPI()
+#     commit_list = github_api.get_commits(repo_name)
+#     top_n_commits = commit_list[:num_commits]
+    
+#     sha_pairs = [commit['sha'] for commit in top_n_commits]
+    
+#     if len(sha_pairs) < 2 :
+#         print("Not enough commits to compare")
+#         return None 
+    
+#     show_difference = github_api.compare_commits(repo_name,sha_pairs[-1],sha_pairs[0])
+    
+#     code_difference = github_api.extract_code_changes(show_difference)
+    
+#     return {"code_difference":code_difference}
+    
+# def get_repo_updates(state: dict) -> dict:
+#     repo_name = state.get("repo_name", "EmailAgent")
+#     num_commits = state.get("num_commits", 10)
+
+#     github_api = GitHubAPI()
+#     commit_list = github_api.get_commits(repo_name)
+    
+#     if len(commit_list) < num_commits + 1:
+#         return {"code_difference": f"Not enough commits (only found {len(commit_list)})"}
+
+#     # Get latest and Nth-previous commit
+#     head_sha = commit_list[0]['sha']
+#     base_sha = commit_list[num_commits]['sha']
+
+#     compare_result = github_api.compare_commits(repo_name, base_sha, head_sha)
+#     code_diff = github_api.extract_code_changes(compare_result)
+
+#     return {"code_difference": code_diff}
+
+def get_repo_updates(state: dict) -> dict:
+    repo_name = state.get("repo_name", "EmailAgent")
+    num_commits = state.get("num_commits", 2)
+
     github_api = GitHubAPI()
     commit_list = github_api.get_commits(repo_name)
-    top_n_commits = commit_list[:num_commits]
-    
-    sha_pairs = [commit['sha'] for commit in top_n_commits]
-    
-    if len(sha_pairs) < 2 :
-        print("Not enough commits to compare")
-        return None 
-    
-    show_difference = github_api.compare_commits(repo_name,sha_pairs[-1],sha_pairs[0])
-    
-    code_difference = github_api.extract_code_changes(show_difference)
-    
-    return {"code_difference":code_difference}
-    
-    
+
+    if len(commit_list) < num_commits + 1:
+        return {"code_difference": f"Not enough commits (found {len(commit_list)} commits)"}
+
+    head_sha = commit_list[0]['sha']
+    base_sha = commit_list[num_commits]['sha']
+
+    compare_result = github_api.compare_commits(repo_name, base_sha, head_sha)
+    code_diff = github_api.extract_code_changes(compare_result)
+
+    return {"code_difference": code_diff}
+
     
 graph_builder.add_node("get_code_changes",get_repo_updates)
 
@@ -79,25 +115,27 @@ def summarize_updates(state: dict) -> dict:
     code_diff = state.get("code_difference")
     
     if not code_diff:
-        return {"summary":"No code difference found to summarize"}
-    
+        return {"summary": "No code difference found to summarize"}
+
+    if isinstance(code_diff, list):  # Convert to readable format
+        diff_text = "\n\n".join([f"{item['filename']}:\n{item['patch']}" for item in code_diff])
+    else:
+        diff_text = str(code_diff)
+
     prompt = f"""
     I have the following code changes between two commits:
 
-    {code_diff}
+    {diff_text}
     
     Please summarize the following:
-    1. **What changes were made**: Identify the specific changes made in each file (e.g., lines added, modified, or deleted).
-    2. **Which files were impacted**: Provide a list of files that were modified.
-    3. **The state of the project**: Based on the code changes, describe where the project stands (e.g., has new functionality been added, bugs fixed, etc.?).
-    4. **Next steps**: Based on the changes, suggest where I should pick up from in the project or what further tasks may be required.
-
-    Provide the summary in a clear, actionable way, highlighting the main points.
+    1. What changes were made.
+    2. Which files were impacted.
+    3. The state of the project.
+    4. Next steps.
     """
-    
-    summary_response = llm.invoke([{"role":"user","content":prompt}])
-    final_summary = summary_response.content.strip()
-    return {"summary":final_summary}
+
+    summary_response = llm.invoke([{"role": "user", "content": prompt}])
+    return {"summary": summary_response.content.strip()}
 
 
 graph_builder.add_node("generate_summary",summarize_updates)
@@ -124,6 +162,11 @@ def run_git_agent():
     print(final_state.get("summary","No summary found"))
     
     # return state["summary"]
+
+def github_agent(state):
+    final_state = graph.invoke(state)
+    return {"agent_outputs": {"github": final_state.get("summary", "No summary found")}}
+
 
 
 if __name__ == "__main__":
