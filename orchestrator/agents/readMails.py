@@ -9,7 +9,8 @@ from bs4 import BeautifulSoup
 
 
 SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
-
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+CREDENTIALS_PATH = os.path.join(CURRENT_DIR, "credentials.json")
 
 def get_credentials(user_email: str) -> Credentials:
     """
@@ -28,7 +29,7 @@ def get_credentials(user_email: str) -> Credentials:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file("credentials.json", SCOPES)
+            flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, SCOPES)
             creds = flow.run_local_server(port=0)
         with open(token_file, "w") as token:
             token.write(creds.to_json())
