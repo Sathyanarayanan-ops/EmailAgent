@@ -185,5 +185,12 @@ def run_email_agent():
     print(final_state.get("summary", "No summary generated."))
 
 
+# Wrapper for LangGraph node
+def email_agent(state):
+    initial_state = {"mails": "", "summary": ""}
+    final_state = graph.invoke(initial_state)
+    return {"agent_outputs": {"email": final_state.get("summary", "No summary generated.")}}
+
+
 if __name__ == "__main__":
     run_email_agent()
