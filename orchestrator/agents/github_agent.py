@@ -11,13 +11,13 @@ from langgraph.graph import START, MessagesState, StateGraph
 from langchain_core.messages import HumanMessage, AIMessage
 import sys
 from dotenv import load_dotenv, find_dotenv
-from readMails import getmessages
+from orchestrator.agents.readMails import getmessages
 from langchain_core.tools import tool
 from langgraph.prebuilt import ToolNode
 import json
 from langchain_core.messages import ToolMessage
 import re
-from getRepo import GitHubAPI
+from orchestrator.agents.getRepo import GitHubAPI
 
 
 ################## Loading Groq API KEY
