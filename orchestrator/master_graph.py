@@ -7,6 +7,8 @@ from orchestrator.agents.github_agent import run_git_agent as github_agent
 from orchestrator.agents.email_agent import email_agent
 from orchestrator.agents.repo_list_agent import repo_list_agent  # NEW
 from orchestrator.agents.github_agent import github_agent
+from orchestrator.agents.SAP_agent import sac_pdf_agent
+
 
 
 # Default fallback agent
@@ -33,6 +35,8 @@ def build_master_graph():
     builder.add_node("github", github_agent)
     builder.add_node("email", email_agent)
     builder.add_node("repo_list", repo_list_agent)  # NEW
+    
+    builder.add_node("sac_pdf", sac_pdf_agent)
 
     builder.set_entry_point("router")
 
@@ -43,8 +47,9 @@ def build_master_graph():
         {
             "github": "github",
             "email": "email",
-            "repo_list": "repo_list",  # NEW
-            "default": "default",
+            "repo_list": "repo_list",  
+            "sac_pdf": "sac_pdf",
+            "default": "default"
         }
     )
 

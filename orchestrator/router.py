@@ -27,7 +27,12 @@ def route_to_agent(state: OrchestratorState) -> OrchestratorState:
 
     elif "email" in user_input or "inbox" in user_input or "mail" in user_input:
         updated_state["active_agent"] = "email"
+        
+    elif "sap" in user_input or "analytics cloud" in user_input or "pdf" in user_input:
+        updated_state["active_agent"] = "sac_pdf"
+
     else:
         updated_state["active_agent"] = "default"
+        
 
     return updated_state
