@@ -4,12 +4,15 @@
 
 ---
 <img width="1429" alt="Screenshot 2025-04-16 at 7 48 53 PM" src="https://github.com/user-attachments/assets/9fa8d681-4fdc-4d8d-bfc5-93c56f75fa76" />
-<img width="1418" alt="Screenshot 2025-04-16 at 7 49 40 PM" src="https://github.com/user-attachments/assets/13285f24-ece7-49e7-9280-06983cf103c6" />
+
 <img width="1425" alt="Screenshot 2025-04-16 at 7 42 52 PM" src="https://github.com/user-attachments/assets/73de2b8e-62ef-4409-840d-74a8e3bf7d35" />
 
-
-
 ---
+
+## Architecture
+![ChatGPT Image Apr 16, 2025 at 08_00_08 PM](https://github.com/user-attachments/assets/519b3597-f2fe-44fc-a2ff-6dbe86397ecb)
+
+
 
 ## 🧩 Why This Matters
 
@@ -62,11 +65,7 @@ This system shows how **independent AI agents** can be **plugged in like LEGO bl
 
 ## 🖼️ Screenshots
 
-> 📌 *Insert demo screenshots here of:*
-- Agent selection via natural language
-- GitHub diff summary output
-- Email digest
-- SAP PDF response to a sales query
+<img width="1418" alt="Screenshot 2025-04-16 at 7 49 40 PM" src="https://github.com/user-attachments/assets/13285f24-ece7-49e7-9280-06983cf103c6" />
 
 ---
 
